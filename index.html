@@ -157,6 +157,9 @@
   <button class="role-btn flex-1 py-3 px-2 border-2 border-gray-200 rounded-xl bg-white text-center transition-all hover:border-blue-500" onclick="switchRole('wali')" id="btnWali">
     <i class="fas fa-chalkboard-teacher text-xl block mb-1"></i><span class="text-xs font-medium">WALI</span>
   </button>
+  <button class="role-btn flex-1 py-3 px-2 border-2 border-gray-200 rounded-xl bg-white text-center transition-all hover:border-blue-500" onclick="switchRole('mapel')" id="btnMapel">
+    <i class="fas fa-book-open text-xl block mb-1"></i><span class="text-xs font-medium">MAPEL</span>
+  </button>
   <button class="role-btn flex-1 py-3 px-2 border-2 border-gray-200 rounded-xl bg-white text-center transition-all hover:border-blue-500 hidden" onclick="switchRole('admin')" id="btnAdmin">
     <i class="fas fa-user-shield text-xl block mb-1"></i><span class="text-xs font-medium">ADMIN</span>
   </button>
@@ -171,7 +174,12 @@
 
 <!-- ===== SISWA ===== -->
 <section id="sectionSiswa" class="section active">
-  <!-- Pilihan Mode Absen -->
+  <!-- Jenis absen siswa -->
+<div class="flex gap-2 mb-3" id="jenisAbsenBar">
+  <button id="btnJenisShalat" onclick="setJenisAbsen('shalat')" class="flex-1 py-2 px-3 border-2 border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold rounded-xl text-sm"><i class="fas fa-mosque mr-1"></i>Shalat</button>
+  <button id="btnJenisMapel" onclick="setJenisAbsen('mapel')" class="flex-1 py-2 px-3 border-2 border-gray-200 bg-white text-gray-600 font-semibold rounded-xl text-sm"><i class="fas fa-book mr-1"></i>Mapel</button>
+</div>
+<!-- Pilihan Mode Absen -->
 <div class="flex gap-2 mb-4">
   <button onclick="setAbsenMode('nis')" id="btnModeNis"
     class="flex-1 py-2 px-3 border-2 border-blue-500 bg-blue-50 text-blue-700 font-semibold rounded-xl text-sm transition-all">
@@ -466,6 +474,82 @@
     <button class="w-full mt-4 py-3 bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-xl transition-all" onclick="logoutPiket()">
       <i class="fas fa-times mr-2"></i>Batal / Keluar
     </button>
+  </div>
+</section>
+
+<!-- ===== MAPEL ===== -->
+<section id="sectionMapel" class="section">
+  <div id="mpLogin">
+    <div class="text-center mb-5">
+      <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3"><i class="fas fa-book-open text-3xl text-purple-600"></i></div>
+      <h3 class="text-xl font-bold text-gray-800">Absen Mata Pelajaran</h3>
+      <p class="text-sm text-gray-500">Login guru mapel</p>
+    </div>
+    <input type="text" id="mpUser" placeholder="Username" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl mb-3 focus:border-purple-500 focus:outline-none">
+    <input type="password" id="mpPass" placeholder="Password" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl mb-3 focus:border-purple-500 focus:outline-none">
+    <button id="btnLoginMapel" onclick="loginMapel()" class="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-xl"><i class="fas fa-sign-in-alt mr-2"></i>Masuk</button>
+    <p id="mpLoginMsg" class="text-sm text-center text-red-600 mt-3 min-h-[20px]"></p>
+  </div>
+
+  <div id="mpApp" class="hidden">
+    <div class="flex items-center justify-between mb-4 p-3 bg-purple-50 border border-purple-200 rounded-xl">
+      <div><p class="text-xs text-purple-600">Guru</p><p class="font-semibold text-purple-900" id="mpNama"></p></div>
+      <button onclick="logoutMapel()" class="px-3 py-2 bg-white border border-purple-300 text-purple-700 rounded-lg text-xs font-semibold"><i class="fas fa-sign-out-alt mr-1"></i>Keluar</button>
+    </div>
+
+    <h4 class="font-semibold text-gray-800 mb-2">Mapel & kelas saya</h4>
+    <div id="mpAsgList" class="mb-3"></div>
+    <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 mb-4">
+      <p class="text-xs font-semibold text-gray-700 mb-2">Tambah mapel & kelas</p>
+      <input type="text" id="mpMapelBaru" placeholder="Nama mapel, mis. Matematika" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-2">
+      <div class="flex gap-2">
+        <select id="mpKelasPilih" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"></select>
+        <button onclick="mpTambahAsg()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-semibold"><i class="fas fa-plus mr-1"></i>Tambah</button>
+      </div>
+      <p id="mpAsgMsg" class="text-xs text-red-600 mt-1 min-h-[14px]"></p>
+    </div>
+
+    <div id="mpPanel" class="hidden">
+      <div class="flex items-center justify-between mb-2">
+        <h4 class="font-bold text-gray-800" id="mpJudul"></h4>
+        <input type="date" id="mpTanggal" onchange="mpRefresh()" class="border border-gray-300 rounded-lg px-2 py-1 text-sm">
+      </div>
+      <div class="p-3 bg-white border border-gray-200 rounded-xl mb-3">
+        <p id="mpSesiStatus" class="text-sm mb-2"></p>
+        <div class="flex gap-2">
+          <button id="mpBtnBuka" onclick="mpBukaSesi()" class="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold"><i class="fas fa-lock-open mr-1"></i>Buka Absen</button>
+          <button id="mpBtnTutup" onclick="mpTutupSesi()" class="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold hidden"><i class="fas fa-lock mr-1"></i>Tutup Absen</button>
+          <button onclick="mpScanStart()" class="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold"><i class="fas fa-camera mr-1"></i>Scan Wajah</button>
+        </div>
+        <p class="text-xs text-gray-500 mt-2">Siswa absen sendiri lewat tab SISWA &rarr; Mapel setelah absen dibuka, atau Anda scan wajah mereka dengan kamera ini.</p>
+      </div>
+
+      <div id="mpScanArea" class="hidden mb-3">
+        <div class="relative bg-black rounded-xl overflow-hidden"><video id="mpScanVideo" autoplay muted playsinline class="w-full"></video>
+          <div class="absolute bottom-0 left-0 right-0 bg-black/60 p-2 text-center"><p id="mpScanStatus" class="text-white text-sm font-semibold"></p></div></div>
+        <div class="flex gap-2 mt-2">
+          <button onclick="mpScanFlip()" class="flex-1 py-2 bg-gray-600 text-white rounded-lg text-sm"><i class="fas fa-sync-alt mr-1"></i>Balik Kamera</button>
+          <button onclick="mpScanStop()" class="flex-1 py-2 bg-red-500 text-white rounded-lg text-sm"><i class="fas fa-times mr-1"></i>Tutup</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-5 gap-2 mb-3 text-center">
+        <div class="bg-blue-50 rounded-lg p-2"><p class="text-xs text-blue-600">H</p><p class="font-bold text-blue-700" id="mpCH">0</p></div>
+        <div class="bg-amber-50 rounded-lg p-2"><p class="text-xs text-amber-600">S</p><p class="font-bold text-amber-700" id="mpCS">0</p></div>
+        <div class="bg-sky-50 rounded-lg p-2"><p class="text-xs text-sky-600">I</p><p class="font-bold text-sky-700" id="mpCI">0</p></div>
+        <div class="bg-red-50 rounded-lg p-2"><p class="text-xs text-red-600">A</p><p class="font-bold text-red-700" id="mpCA">0</p></div>
+        <div class="bg-gray-100 rounded-lg p-2"><p class="text-xs text-gray-600">Belum</p><p class="font-bold text-gray-700" id="mpCB">0</p></div>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-xl overflow-hidden mb-3"><table class="w-full"><tbody id="mpTabel"></tbody></table></div>
+      <div class="flex gap-2 mb-4">
+        <button onclick="mpAlpaBelum()" class="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold">Belum absen &rarr; Alpa</button>
+        <button onclick="mpRekap()" class="flex-1 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-semibold"><i class="fas fa-table mr-1"></i>Rekap Bulan</button>
+      </div>
+      <div id="mpRekapArea" class="hidden bg-white border border-gray-200 rounded-xl p-3 mb-4">
+        <div class="flex items-center justify-between mb-2"><p class="font-semibold text-sm text-gray-800" id="mpRekapJudul"></p><button onclick="mpExport()" class="px-3 py-1 bg-green-600 text-white rounded-lg text-xs"><i class="fas fa-file-excel mr-1"></i>Excel</button></div>
+        <table class="w-full text-left"><thead><tr class="text-xs text-gray-500 border-b"><th class="p-2">#</th><th class="p-2">Nama</th><th class="p-2 text-center">H</th><th class="p-2 text-center">S</th><th class="p-2 text-center">I</th><th class="p-2 text-center">A</th></tr></thead><tbody id="mpRekapBody"></tbody></table>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -1530,8 +1614,8 @@ function formatHP(hp) {
 // ============================================================
 // SUPABASE
 // ============================================================
-const SUPABASE_URL = 'https://gylbamktcbsnuawzsswf.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5bGJhbWt0Y2JzbnVhd3pzc3dmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0NzQ0NzgsImV4cCI6MjEwOTA1MDQ3OH0.hVDwkn5YnJxab2nydy5N_xxUW7c9tT8VAxA0NenCZPE';
+const SUPABASE_URL = 'https://pgrcbuwaciukbpfxupjz.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBncmNidXdhY2l1a2JwZnh1cGp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyOTQ4MzQsImV4cCI6MjA5Mjg3MDgzNH0.unozqM7zfsLCyNA6e57TnGdCyoRdR6DDKVQBmXmHR1c';
 const FONNTE_PROXY_URL = 'https://pgrcbuwaciukbpfxupjz.supabase.co/functions/v1/fonnte-proxy';
   const HEADERS = {
   'Content-Type': 'application/json',
@@ -1644,6 +1728,11 @@ function updateWaktuBar(role) {
     sel.innerHTML = WAKTU_LIST.map(w => `<option value="${w.id}">${w.label}</option>`).join('');
   }
   sel.value = CUR_WAKTU;
+  if (role === 'mapel' || (role === 'siswa' && ABSEN_JENIS === 'mapel')) {
+    sel.classList.add('hidden');
+    lbl.textContent = role === 'mapel' ? 'Absen mapel: data terpisah dari absen shalat' : 'Absen mapel: ikut sesi yang dibuka guru untuk kelas Anda';
+    return;
+  }
   if (role === 'siswa') {
     sel.classList.add('hidden');
     lbl.textContent = 'Memuat waktu shalat...';
@@ -1886,6 +1975,7 @@ function hideWAProgress() {
 // NAVIGASI
 // ============================================================
 function switchRole(role) {
+  if (role !== 'mapel' && typeof mpScanStop === 'function' && typeof MP !== 'undefined') mpScanStop();
   if (role !== 'siswa' && AppState.scanner) stopStudentScan();
   document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.role-btn').forEach(el => el.classList.remove('active'));
@@ -4714,6 +4804,228 @@ function warmFaceCache() {
   try { if (navigator.serviceWorker && navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage('precache-models'); } catch (e) {}
 }
 
+// ============================================================
+// ABSEN MAPEL (guru mata pelajaran)
+// Data disimpan di tabel absensi yang sama, dengan kunci `bulan` = 'YYYY-MM@m_<mapel>'
+// Sesi absen dibuka guru -> siswa kelas itu absen wajah -> tercatat untuk mapel tersebut
+// ============================================================
+var ABSEN_JENIS = 'shalat';
+const MP = { guru: null, asg: [], cur: null, kelasList: [], rows: [], scanStream: null, scanIndex: [], scanRows: [], loop: null, facing: 'user' };
+const enc = encodeURIComponent;
+function mpKey(mapel) { return 'm_' + String(mapel || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30); }
+
+// ---------- sisi siswa ----------
+function setJenisAbsen(j) {
+  if (j === 'mapel' && !fiturWajahSiswaAktif) { alert('Absen mapel memakai scan wajah, tetapi fitur absen wajah siswa sedang dinonaktifkan admin.'); return; }
+  ABSEN_JENIS = j;
+  window._tgtAbsen = null;
+  const on = ['border-emerald-500', 'bg-emerald-50', 'text-emerald-700'], off = ['border-gray-200', 'bg-white', 'text-gray-600'];
+  const bs = document.getElementById('btnJenisShalat'), bm = document.getElementById('btnJenisMapel');
+  [[bs, j === 'shalat'], [bm, j === 'mapel']].forEach(([b, a]) => { b.classList.remove(...on, ...off); b.classList.add(...(a ? on : off)); });
+  const nisBtn = document.getElementById('btnModeNis');
+  if (j === 'mapel') { nisBtn.classList.add('hidden'); setAbsenMode('wajah'); }
+  else { nisBtn.classList.remove('hidden'); setAbsenMode('nis'); }
+  updateWaktuBar('siswa');
+}
+// Tentukan "ke mana" absen siswa dicatat: shalat aktif, atau sesi mapel yang dibuka untuk kelas siswa
+async function resolveTargetAbsen(nis) {
+  if (ABSEN_JENIS !== 'mapel') { const w = await resolveWaktuAktif(); return { key: w, label: 'shalat ' + waktuLabel(w), jenis: 'shalat' }; }
+  const sw = await sbSelect(T.siswa, `?nis=eq.${enc(nis)}&limit=1`);
+  if (!sw || !sw.length) throw new Error('NIS tidak ditemukan.');
+  const kelas = sw[0].kelas;
+  const ses = await sbSelect('sesi_mapel', `?kelas=eq.${enc(kelas)}&tanggal=eq.${todayStr()}&aktif=eq.true&order=dibuka_pada.desc&limit=1`);
+  if (!ses || !ses.length) throw new Error('Belum ada sesi absen mapel yang dibuka untuk kelas ' + kelas + '. Minta guru membukanya.');
+  return { key: ses[0].mapel_key, label: 'mapel ' + ses[0].mapel + ' (' + (ses[0].nama_guru || '-') + ')', jenis: 'mapel', sesi: ses[0] };
+}
+
+// ---------- login & penugasan ----------
+async function loginMapel() {
+  const u = document.getElementById('mpUser').value.trim(), p = document.getElementById('mpPass').value, msg = document.getElementById('mpLoginMsg');
+  if (!u || !p) { msg.textContent = 'Username dan password harus diisi!'; return; }
+  setButtonLoading('btnLoginMapel', true); msg.textContent = 'Memverifikasi...';
+  try {
+    const d = await sbSelect(T.guru, `?username=eq.${enc(u)}&password=eq.${enc(p)}&limit=1`);
+    if (!d || !d.length) throw new Error('Username atau password salah!');
+    MP.guru = d[0];
+    document.getElementById('mpLogin').classList.add('hidden');
+    document.getElementById('mpApp').classList.remove('hidden');
+    document.getElementById('mpNama').textContent = MP.guru.nama;
+    document.getElementById('mpTanggal').value = todayStr();
+    msg.textContent = '';
+    const ks = await sbSelect(T.siswa, '?select=kelas');
+    MP.kelasList = [...new Set((ks || []).map(x => x.kelas).filter(Boolean))].sort();
+    document.getElementById('mpKelasPilih').innerHTML = MP.kelasList.map(k => `<option value="${enc(k)}">${sanitizeHTML(k)}</option>`).join('');
+    await mpLoadAsg();
+  } catch (e) { msg.textContent = e.message; }
+  setButtonLoading('btnLoginMapel', false);
+}
+function logoutMapel() {
+  mpScanStop(); MP.guru = null; MP.cur = null; MP.asg = [];
+  document.getElementById('mpApp').classList.add('hidden');
+  document.getElementById('mpLogin').classList.remove('hidden');
+  document.getElementById('mpPass').value = '';
+}
+async function mpLoadAsg() {
+  MP.asg = (await sbSelect('mapel_ajar', `?username=eq.${enc(MP.guru.username)}&order=mapel.asc,kelas.asc`)) || [];
+  const box = document.getElementById('mpAsgList');
+  if (!MP.asg.length) { box.innerHTML = '<p class="text-sm text-gray-500 text-center py-3">Belum ada mapel. Tambahkan di bawah.</p>'; document.getElementById('mpPanel').classList.add('hidden'); return; }
+  box.innerHTML = MP.asg.map(a => {
+    const act = MP.cur && MP.cur.id === a.id;
+    return `<div class="flex items-center gap-2 mb-2"><button onclick="mpPilih(${Number(a.id)})" class="flex-1 text-left px-3 py-2 rounded-xl border-2 ${act ? 'border-purple-500 bg-purple-50' : 'border-gray-200 bg-white'}"><span class="font-semibold text-gray-800">${sanitizeHTML(a.mapel)}</span><span class="text-xs text-gray-500"> • Kelas ${sanitizeHTML(a.kelas)}</span></button><button onclick="mpHapusAsg(${Number(a.id)})" class="px-3 py-2 bg-red-50 text-red-600 rounded-xl text-xs"><i class="fas fa-trash"></i></button></div>`;
+  }).join('');
+}
+async function mpTambahAsg() {
+  const mapel = document.getElementById('mpMapelBaru').value.trim();
+  const kelas = decodeURIComponent(document.getElementById('mpKelasPilih').value || '');
+  const msg = document.getElementById('mpAsgMsg');
+  if (!mapel || !kelas) { msg.textContent = 'Isi nama mapel dan pilih kelas.'; return; }
+  try {
+    await sbUpsert('mapel_ajar', { username: MP.guru.username, nama_guru: MP.guru.nama, mapel, kelas }, 'username,mapel,kelas');
+    document.getElementById('mpMapelBaru').value = ''; msg.textContent = '';
+    await mpLoadAsg();
+  } catch (e) { msg.textContent = e.message; }
+}
+async function mpHapusAsg(id) {
+  if (!confirm('Hapus mapel & kelas ini dari daftar Anda? (Data absen yang sudah tersimpan tidak dihapus)')) return;
+  try { await sbDelete('mapel_ajar', `?id=eq.${Number(id)}`); if (MP.cur && MP.cur.id === id) { MP.cur = null; mpScanStop(); } await mpLoadAsg(); } catch (e) { alert(e.message); }
+}
+function mpPilih(id) {
+  mpScanStop();
+  MP.cur = MP.asg.find(a => a.id === id) || null;
+  if (!MP.cur) return;
+  document.getElementById('mpPanel').classList.remove('hidden');
+  document.getElementById('mpJudul').textContent = MP.cur.mapel + ' • Kelas ' + MP.cur.kelas;
+  document.getElementById('mpRekapArea').classList.add('hidden');
+  mpLoadAsg(); mpRefresh();
+}
+
+// ---------- sesi & daftar hadir ----------
+async function mpRefresh() {
+  if (!MP.cur) return;
+  const tgl = document.getElementById('mpTanggal').value || todayStr();
+  const key = mpKey(MP.cur.mapel), col = tglCol(tgl);
+  const body = document.getElementById('mpTabel');
+  body.innerHTML = '<tr><td colspan="2" class="text-center py-4 text-gray-500"><i class="fas fa-spinner animate-spin mr-2"></i>Memuat...</td></tr>';
+  try {
+    const [siswa, abs, ses] = await Promise.all([
+      sbSelect(T.siswa, `?kelas=eq.${enc(MP.cur.kelas)}&order=nama.asc`),
+      _sbSelect(T.absensi, `?kelas=eq.${enc(MP.cur.kelas)}&bulan=eq.${enc(bulanKey(toBulan(tgl), key))}&select=nis,${col}`),
+      sbSelect('sesi_mapel', `?kelas=eq.${enc(MP.cur.kelas)}&tanggal=eq.${todayStr()}&aktif=eq.true&order=dibuka_pada.desc&limit=1`)
+    ]);
+    const map = {}; (abs || []).forEach(a => { map[String(a.nis)] = a[col] || ''; });
+    MP.rows = (siswa || []).map(s => ({ ...s, st: map[String(s.nis)] || '' }));
+    const c = { H: 0, S: 0, I: 0, A: 0, '': 0 }; MP.rows.forEach(r => c[r.st]++);
+    ['H', 'S', 'I', 'A'].forEach(k => { document.getElementById('mpC' + k).textContent = c[k]; });
+    document.getElementById('mpCB').textContent = c[''];
+    // status sesi
+    const mine = ses && ses[0] && ses[0].username === MP.guru.username && ses[0].mapel_key === key;
+    const stEl = document.getElementById('mpSesiStatus');
+    if (mine) stEl.innerHTML = '<span class="text-green-700 font-semibold">● Absen DIBUKA</span> <span class="text-xs text-gray-500">siswa kelas ini bisa absen wajah (mode Mapel)</span>';
+    else if (ses && ses[0]) stEl.innerHTML = `<span class="text-amber-700 font-semibold">● Sesi dibuka oleh ${sanitizeHTML(ses[0].nama_guru || '-')} (${sanitizeHTML(ses[0].mapel)})</span> <span class="text-xs text-gray-500">membuka sesi baru akan menutupnya</span>`;
+    else stEl.innerHTML = '<span class="text-gray-600 font-semibold">● Absen belum dibuka</span>';
+    document.getElementById('mpBtnBuka').classList.toggle('hidden', !!mine);
+    document.getElementById('mpBtnTutup').classList.toggle('hidden', !mine);
+    body.innerHTML = MP.rows.length ? MP.rows.map(r => `<tr class="border-b border-gray-100"><td class="p-2 text-sm">${sanitizeHTML(r.nama)}<div class="text-xs text-gray-400">${sanitizeHTML(r.nis)}</div></td><td class="p-2 text-right"><select class="border border-gray-300 rounded-lg px-2 py-1 text-sm" data-nis="${enc(r.nis)}" data-nama="${enc(r.nama)}" data-kelas="${enc(r.kelas)}" onchange="mpSetStatus(this)">${[['', '—'], ['H', 'Hadir'], ['S', 'Sakit'], ['I', 'Izin'], ['A', 'Alpa']].map(([v, l]) => `<option value="${v}"${r.st === v ? ' selected' : ''}>${l}</option>`).join('')}</select></td></tr>`).join('') : '<tr><td colspan="2" class="text-center py-4 text-gray-500">Tidak ada siswa di kelas ini</td></tr>';
+  } catch (e) { body.innerHTML = `<tr><td colspan="2" class="text-center py-4 text-red-500">${sanitizeHTML(e.message)}</td></tr>`; }
+}
+async function mpBukaSesi() {
+  const kelas = MP.cur.kelas, today = todayStr();
+  try {
+    await _sbUpdate('sesi_mapel', `?kelas=eq.${enc(kelas)}&tanggal=eq.${today}&aktif=eq.true`, { aktif: false });
+    await _sbInsert('sesi_mapel', { tanggal: today, kelas, mapel: MP.cur.mapel, mapel_key: mpKey(MP.cur.mapel), username: MP.guru.username, nama_guru: MP.guru.nama, aktif: true });
+    document.getElementById('mpTanggal').value = today;
+    mpRefresh();
+  } catch (e) { alert('Gagal membuka sesi: ' + e.message); }
+}
+async function mpTutupSesi() {
+  try { await _sbUpdate('sesi_mapel', `?kelas=eq.${enc(MP.cur.kelas)}&tanggal=eq.${todayStr()}&aktif=eq.true&username=eq.${enc(MP.guru.username)}`, { aktif: false }); mpRefresh(); }
+  catch (e) { alert('Gagal menutup sesi: ' + e.message); }
+}
+async function mpSetStatus(sel) {
+  const tgl = document.getElementById('mpTanggal').value || todayStr();
+  try { await setStatusHarian(decodeURIComponent(sel.dataset.nis), decodeURIComponent(sel.dataset.nama), decodeURIComponent(sel.dataset.kelas), tgl, sel.value || null, mpKey(MP.cur.mapel)); mpRefresh(); }
+  catch (e) { alert('Gagal menyimpan: ' + e.message); }
+}
+async function mpAlpaBelum() {
+  const belum = MP.rows.filter(r => !r.st);
+  if (!belum.length) { alert('Semua siswa sudah punya status.'); return; }
+  if (!confirm(`Tandai ${belum.length} siswa yang belum absen sebagai ALPA?`)) return;
+  const tgl = document.getElementById('mpTanggal').value || todayStr();
+  try { for (const r of belum) await setStatusHarian(r.nis, r.nama, r.kelas, tgl, 'A', mpKey(MP.cur.mapel)); mpRefresh(); }
+  catch (e) { alert('Gagal: ' + e.message); }
+}
+
+// ---------- scan wajah dengan kamera guru (hanya siswa kelas ini) ----------
+async function mpScanStart() {
+  if (!MP.cur) return;
+  const st = document.getElementById('mpScanStatus');
+  document.getElementById('mpScanArea').classList.remove('hidden');
+  st.innerHTML = '<i class="fas fa-spinner animate-spin mr-2"></i>Memuat model AI...';
+  try {
+    warmFaceCache();
+    if (!(await loadFaceModels())) throw new Error('Gagal memuat model AI.');
+    MP.scanRows = (await sbSelect('wajah_siswa', `?kelas=eq.${enc(MP.cur.kelas)}&select=nis,nama,kelas,descriptor`)) || [];
+    MP.scanIndex = buildFaceIndex(MP.scanRows);
+    if (!MP.scanIndex.length) throw new Error('Belum ada wajah siswa kelas ini yang terdaftar.');
+    MP.scanLive = await getLivenessCfg('piket');
+    MP.scanStream = await navigator.mediaDevices.getUserMedia(camConstraints(MP.facing));
+    const v = document.getElementById('mpScanVideo'); v.srcObject = MP.scanStream;
+    await new Promise(r => v.onloadedmetadata = r);
+    mpScanLoop();
+  } catch (e) { st.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>' + sanitizeHTML(e.message); mpScanStop(true); }
+}
+function mpScanLoop() {
+  if (MP.loop) MP.loop.stop();
+  if (!MP.scanStream) return;
+  const st = document.getElementById('mpScanStatus');
+  st.innerHTML = '<i class="fas fa-camera mr-2"></i>Arahkan wajah siswa ke kamera...';
+  MP.loop = runFaceLoop({
+    video: document.getElementById('mpScanVideo'), index: MP.scanIndex, mode: '1vn', liveness: MP.scanLive, size: 320, timeoutMs: 600000,
+    setStatus: h => { st.innerHTML = h; }, isActive: () => !!MP.scanStream,
+    onFail: () => setTimeout(mpScanLoop, 800),
+    onMatch: async (nis, dist) => {
+      const s = MP.scanRows.find(r => r.nis === nis); const key = mpKey(MP.cur.mapel), today = todayStr();
+      try {
+        const ex = await getStatusHarian(nis, today, key);
+        if (ex) st.innerHTML = `<i class="fas fa-info-circle mr-2"></i>${sanitizeHTML(s.nama)} sudah tercatat ${STATUS_LABEL[ex]}`;
+        else { await setStatusHarian(nis, s.nama, s.kelas, today, 'H', key); st.innerHTML = `<i class="fas fa-check-circle mr-2"></i>${sanitizeHTML(s.nama)} — hadir tercatat`; bicarakan(`${s.nama}, hadir tercatat`); }
+        if ((document.getElementById('mpTanggal').value || today) === today) mpRefresh();
+      } catch (e) { st.innerHTML = sanitizeHTML(e.message); }
+      setTimeout(mpScanLoop, 2000);
+    }
+  });
+}
+function mpScanStop(keepMsg) {
+  if (MP.loop) { MP.loop.stop(); MP.loop = null; }
+  if (MP.scanStream) { MP.scanStream.getTracks().forEach(t => t.stop()); MP.scanStream = null; }
+  if (!keepMsg) document.getElementById('mpScanArea').classList.add('hidden');
+}
+function mpScanFlip() { MP.facing = MP.facing === 'user' ? 'environment' : 'user'; mpScanStop(true); mpScanStart(); }
+
+// ---------- rekap bulanan ----------
+async function mpRekap() {
+  const tgl = document.getElementById('mpTanggal').value || todayStr(), bulan = toBulan(tgl), key = mpKey(MP.cur.mapel);
+  const area = document.getElementById('mpRekapArea'); area.classList.remove('hidden');
+  const body = document.getElementById('mpRekapBody'); body.innerHTML = '<tr><td colspan="6" class="text-center py-3"><i class="fas fa-spinner animate-spin"></i></td></tr>';
+  try {
+    const [siswa, abs] = await Promise.all([
+      sbSelect(T.siswa, `?kelas=eq.${enc(MP.cur.kelas)}&order=nama.asc`),
+      _sbSelect(T.absensi, `?kelas=eq.${enc(MP.cur.kelas)}&bulan=eq.${enc(bulanKey(bulan, key))}`)
+    ]);
+    const m = {}; (abs || []).forEach(a => { m[String(a.nis)] = a; });
+    MP.rekap = (siswa || []).map(s => { const a = m[String(s.nis)] || {}; const c = { H: 0, S: 0, I: 0, A: 0 }; TGL_COLS.forEach(k => { if (c[a[k]] !== undefined) c[a[k]]++; }); return { nis: s.nis, nama: s.nama, ...c }; });
+    MP.rekapBulan = bulan;
+    body.innerHTML = MP.rekap.map((r, i) => `<tr class="border-b border-gray-100"><td class="p-2 text-xs">${i + 1}</td><td class="p-2 text-sm">${sanitizeHTML(r.nama)}</td><td class="p-2 text-center text-blue-700">${r.H}</td><td class="p-2 text-center">${r.S}</td><td class="p-2 text-center">${r.I}</td><td class="p-2 text-center text-red-600">${r.A}</td></tr>`).join('') || '<tr><td colspan="6" class="text-center py-3 text-gray-500">Tidak ada data</td></tr>';
+    document.getElementById('mpRekapJudul').textContent = 'Rekap ' + bulan + ' — ' + MP.cur.mapel + ' (' + MP.cur.kelas + ')';
+  } catch (e) { body.innerHTML = `<tr><td colspan="6" class="text-center py-3 text-red-500">${sanitizeHTML(e.message)}</td></tr>`; }
+}
+function mpExport() {
+  if (!MP.rekap || typeof XLSX === 'undefined') { alert('Buka rekap dulu (dan pastikan internet aktif untuk fitur Excel).'); return; }
+  const aoa = [['NIS', 'Nama', 'Hadir', 'Sakit', 'Izin', 'Alpa'], ...MP.rekap.map(r => [r.nis, r.nama, r.H, r.S, r.I, r.A])];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), 'Rekap');
+  XLSX.writeFile(wb, `Absen_${MP.cur.mapel}_${MP.cur.kelas}_${MP.rekapBulan}.xlsx`.replace(/\s+/g, '_'));
+}
+
 // Load model face-api.js
 async function loadFaceModels() {
   if (faceModelsLoaded) return true;
@@ -4917,6 +5229,7 @@ async function startFaceScan() {
   // LANJUT PROSES WAJAH
   faceStatus.innerHTML = '<i class="fas fa-spinner animate-spin mr-2"></i>Memuat model AI...';
   try {
+    window._tgtAbsen = await resolveTargetAbsen(nis);
     const loaded = await loadFaceModels();
     if (!loaded) throw new Error('Gagal memuat model AI. Coba lagi.');
     faceStatus.innerHTML = '<i class="fas fa-spinner animate-spin mr-2"></i>Mengambil data wajah...';
@@ -4960,14 +5273,16 @@ async function prosesAbsenWajah(nis, distance) {
     if (!siswaList || !siswaList.length) throw new Error('NIS tidak ditemukan.');
     const siswa = siswaList[0];
 
-    const wkt = await resolveWaktuAktif();
-    const existing = await getStatusHarian(nis, today, wkt);
+    // tujuan absen: shalat aktif, atau sesi mapel yang sedang dibuka untuk kelas siswa
+    const tgt = window._tgtAbsen || await resolveTargetAbsen(nis);
+    window._tgtAbsen = tgt;
+    const existing = await getStatusHarian(nis, today, tgt.key);
     if (existing) {
-      showFaceResult(false, `Anda sudah tercatat ${STATUS_LABEL[existing]} pada shalat ${waktuLabel(wkt)} hari ini.`);
+      showFaceResult(false, `Anda sudah tercatat ${STATUS_LABEL[existing]} untuk ${tgt.label} hari ini.`);
       return;
     }
 
-    await setStatusHarian(siswa.nis, siswa.nama, siswa.kelas, today, 'H', wkt);
+    await setStatusHarian(siswa.nis, siswa.nama, siswa.kelas, today, 'H', tgt.key);
     localStorage.setItem('sipagi_scan_date', today);
     bicarakan(`Selamat datang ${siswa.nama}, kelas ${siswa.kelas}, hadir tercatat`);
 
@@ -4990,7 +5305,7 @@ function showFaceResult(success, data, akurasi=0) {
       <h3 class="text-xl font-bold text-blue-700 mb-2">Berhasil!</h3>
       <p class="text-blue-800 font-semibold">${sanitizeHTML(data.nama)}</p>
       <p class="text-blue-600">Kelas: ${sanitizeHTML(data.kelas)}</p>
-      <p class="text-blue-600">Waktu: ${nowStr()} • Shalat ${waktuLabel(wkt)}</p>
+      <p class="text-blue-600">Waktu: ${nowStr()} • ${sanitizeHTML((window._tgtAbsen && window._tgtAbsen.label) || '')}</p>
       <p class="text-xs text-blue-400 mt-1">Akurasi wajah: ${akurasi}%</p>
       <button class="mt-4 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg"
         onclick="resetAbsenWajah()">
@@ -5016,6 +5331,7 @@ function showFaceResult(success, data, akurasi=0) {
 }
 
 function resetAbsenWajah() {
+  window._tgtAbsen = null;
   // Reset ke step lokasi
   document.getElementById('stepLokasi').classList.remove('hidden');
   document.getElementById('stepNisWajah').classList.add('hidden');
