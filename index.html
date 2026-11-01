@@ -1486,6 +1486,10 @@
   </button>
 </div>
       </div>
+      <label class="block w-full mb-2 py-2 text-center bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl text-sm cursor-pointer">
+        <i class="fas fa-camera mr-1"></i>Ambil Foto dengan Kamera HP
+        <input type="file" accept="image/*" capture="user" class="hidden" onchange="handleUploadFoto(this)">
+      </label>
       <button onclick="startAdminKamera()" id="btnAdminKamera"
         class="w-full py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-xl text-sm">
         <i class="fas fa-video mr-1"></i>Buka Kamera
@@ -1551,6 +1555,7 @@
 </div>
 </div>
 
+<script src="config.js"></script>
 <script>
 
 async function kirimWA(target, pesan) {
@@ -1614,9 +1619,13 @@ function formatHP(hp) {
 // ============================================================
 // SUPABASE
 // ============================================================
-const SUPABASE_URL = 'https://gylbamktcbsnuawzsswf.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5bGJhbWt0Y2JzbnVhd3pzc3dmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0NzQ0NzgsImV4cCI6MjEwOTA1MDQ3OH0.hVDwkn5YnJxab2nydy5N_xxUW7c9tT8VAxA0NenCZPE';
-const FONNTE_PROXY_URL = 'https://pgrcbuwaciukbpfxupjz.supabase.co/functions/v1/fonnte-proxy';
+// Pengaturan proyek Supabase dibaca dari config.js (edit config.js saja, bukan file ini)
+const SUPABASE_URL = ((window.APP_CONFIG || {}).SUPABASE_URL || '').replace(/\/+$/, '');
+const SUPABASE_ANON_KEY = (window.APP_CONFIG || {}).SUPABASE_ANON_KEY || '';
+const FONNTE_PROXY_URL = SUPABASE_URL + '/functions/v1/fonnte-proxy';
+if (!SUPABASE_URL || /GANTI/.test(SUPABASE_URL + SUPABASE_ANON_KEY)) {
+  window.addEventListener('DOMContentLoaded', () => alert('Aplikasi belum dihubungkan ke Supabase.\nIsi SUPABASE_URL dan SUPABASE_ANON_KEY di file config.js, lalu muat ulang.'));
+}
   const HEADERS = {
   'Content-Type': 'application/json',
   'apikey': SUPABASE_ANON_KEY,
@@ -1924,6 +1933,15 @@ function suaraGagal(pesan = 'Wajah tidak dikenali, coba lagi') {
   // ============================================================
 // UTILITY
 // ============================================================
+// Diagnosa koneksi: menampilkan proyek Supabase yang dipakai & apa yang bisa dibaca dari tabel guru
+async function diagKoneksi() {
+  const host = String(SUPABASE_URL).replace(/^https?:\/\//, '');
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/guru?select=username&limit=5`, { headers: HEADERS });
+    const t = await r.text();
+    return `Diagnosa -> proyek: ${host} | HTTP ${r.status} | tabel guru terbaca: ${t.slice(0, 150)}`;
+  } catch (e) { return `Diagnosa -> proyek: ${host} | gagal terhubung: ${e.message}`; }
+}
 function sanitizeHTML(str) {
   if (str === null || str === undefined) return '';
   const d = document.createElement('div'); d.textContent = String(str); return d.innerHTML;
@@ -2577,7 +2595,10 @@ async function loginAdmin() {
     document.getElementById('loginAdminArea').classList.add('hidden');
     document.getElementById('dashboardAdmin').classList.remove('hidden');
     loadAdminDashboard();
-  } catch (err) { showMessage('msgAdmin', err.message, 'error'); }
+  } catch (err) {
+    showMessage('msgAdmin', err.message, 'error');
+    if (/salah/.test(err.message)) { diagKoneksi().then(t => { const el = document.getElementById('msgAdmin'); if (el) el.innerHTML += '<br><span style="font-size:11px;color:#6b7280;word-break:break-all">' + sanitizeHTML(t) + '</span>'; }); }
+  }
   setButtonLoading('btnLoginAdmin', false);
 }
 async function loadAdminDashboard() {
@@ -3556,7 +3577,7 @@ async function updateServerSchedule(type) {
     if (type === 'autoalpa') {
       body.hariAktif = [...serverActiveDays].sort();
     }
-    const res = await fetch('https://pgrcbuwaciukbpfxupjz.supabase.co/functions/v1/update-schedule', {
+    const res = await fetch(SUPABASE_URL + '/functions/v1/update-schedule', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -5376,6 +5397,16 @@ function searchStudentWajah(keyword) {
   }, 400);
 }
 
+// Tombol simpan aktif hanya jika siswa SUDAH dipilih dan foto SUDAH ada; beri petunjuk jika belum
+function updateTombolSimpanWajah() {
+  const nis = document.getElementById('wajahNis').value;
+  const b = document.getElementById('btnSimpanWajah');
+  const m = document.getElementById('resultSimpanWajah');
+  b.disabled = !(nis && currentFotoBlob);
+  if (!nis && currentFotoBlob) m.innerHTML = '<span class="text-amber-600 font-semibold">⚠️ Foto sudah siap. Pilih dulu siswanya lewat kolom pencarian di bagian atas.</span>';
+  else if (nis && !currentFotoBlob) m.innerHTML = '<span class="text-amber-600">Ambil foto atau upload foto dulu.</span>';
+  else if (nis && currentFotoBlob) m.innerHTML = '';
+}
 async function selectStudentWajah(nis, nama, kelas) {
   nis = decodeURIComponent(nis);
   nama = decodeURIComponent(nama);
@@ -5386,6 +5417,7 @@ async function selectStudentWajah(nis, nama, kelas) {
   document.getElementById('wajahSiswaInfo').classList.remove('hidden');
   document.getElementById('wajahNamaDisplay').textContent = nama;
   document.getElementById('wajahKelasDisplay').textContent = `Kelas: ${kelas} | NIS: ${nis}`;
+  updateTombolSimpanWajah();
 
   // Cek apakah sudah ada data wajah
   try {
@@ -5408,7 +5440,14 @@ async function startAdminKamera() {
     video.srcObject = adminKameraStream;
     document.getElementById('adminFotoArea').classList.remove('hidden');
     document.getElementById('btnAdminKamera').classList.add('hidden');
-  } catch(err) { alert('Tidak dapat mengakses kamera: ' + err.message); }
+  } catch(err) {
+    const pesan = !window.isSecureContext ? 'Kamera hanya bisa dipakai di alamat HTTPS.'
+      : err.name === 'NotAllowedError' ? 'Izin kamera ditolak. Izinkan kamera untuk situs ini di pengaturan browser, lalu coba lagi.'
+      : err.name === 'NotFoundError' ? 'Kamera tidak ditemukan pada perangkat ini.'
+      : err.name === 'NotReadableError' ? 'Kamera sedang dipakai aplikasi lain. Tutup aplikasi itu lalu coba lagi.'
+      : err.message;
+    alert('Tidak dapat mengakses kamera: ' + pesan + '\n\nAlternatif: pakai tombol "Ambil Foto dengan Kamera HP".');
+  }
 }
 
 function stopAdminKamera() {
@@ -5424,24 +5463,43 @@ function flipAdminKamera() {
 function ambilFotoAdmin() {
   const video = document.getElementById('adminFotoVideo');
   const canvas = document.getElementById('adminFotoCanvas');
+  if (!video.videoWidth) { alert('Kamera belum siap. Tunggu gambar muncul lalu coba lagi.'); return; }
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   canvas.getContext('2d').drawImage(video, 0, 0);
   canvas.toBlob(blob => {
+    if (!blob) { alert('Gagal mengambil foto. Coba lagi.'); return; }
     currentFotoBlob = blob;
     tampilkanPreviewFoto(URL.createObjectURL(blob));
     stopAdminKamera();
-    document.getElementById('btnSimpanWajah').disabled = !document.getElementById('wajahNis').value;
+    updateTombolSimpanWajah();
   }, 'image/jpeg', 0.9);
 }
 
-function handleUploadFoto(input) {
+// Kecilkan foto (maks. 1280px, JPEG) agar foto kamera HP yang besar tidak ditolak & upload cepat
+async function kompresFoto(file) {
+  let bmp;
+  try { bmp = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
+  catch (e) {
+    bmp = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = URL.createObjectURL(file); });
+  }
+  const w0 = bmp.width || bmp.naturalWidth, h0 = bmp.height || bmp.naturalHeight;
+  const k = Math.min(1, 1280 / Math.max(w0, h0));
+  const c = document.createElement('canvas'); c.width = Math.round(w0 * k); c.height = Math.round(h0 * k);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  if (bmp.close) bmp.close();
+  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.88));
+  if (!blob) throw new Error('Gagal memproses foto');
+  return blob;
+}
+async function handleUploadFoto(input) {
   const file = input.files[0];
   if (!file) return;
-  if (file.size > 2 * 1024 * 1024) { alert('Ukuran file maksimal 2MB!'); return; }
-  currentFotoBlob = file;
-  tampilkanPreviewFoto(URL.createObjectURL(file));
-  document.getElementById('btnSimpanWajah').disabled = !document.getElementById('wajahNis').value;
+  if (file.size > 25 * 1024 * 1024) { alert('Ukuran file terlalu besar (maks. 25MB).'); return; }
+  try { currentFotoBlob = await kompresFoto(file); } catch (e) { currentFotoBlob = file; }
+  tampilkanPreviewFoto(URL.createObjectURL(currentFotoBlob));
+  updateTombolSimpanWajah();
+  try { input.value = ''; } catch (e) {}
 }
 
 function tampilkanPreviewFoto(url) {
@@ -5452,7 +5510,7 @@ function tampilkanPreviewFoto(url) {
 async function simpanWajahSiswa() {
   const nis = document.getElementById('wajahNis').value;
   const resultEl = document.getElementById('resultSimpanWajah');
-  if (!nis) { resultEl.innerHTML = '<span class="text-red-600">Pilih siswa dulu!</span>'; return; }
+  if (!nis) { resultEl.innerHTML = '<span class="text-red-600 font-semibold">⚠️ Pilih siswa dulu: ketik nama/NIS di kolom pencarian di bagian atas, lalu klik namanya. Foto Anda tidak hilang.</span>'; const si = document.getElementById('wajahSearchInput'); if (si) { si.scrollIntoView({ behavior: 'smooth', block: 'center' }); si.focus(); } return; }
   if (!currentFotoBlob) { resultEl.innerHTML = '<span class="text-red-600">Upload atau ambil foto dulu!</span>'; return; }
 
   setButtonLoading('btnSimpanWajah', true);
@@ -5502,6 +5560,8 @@ async function simpanWajahSiswa() {
         body: currentFotoBlob
       }
     );
+    let uploadErr = '';
+    if (!uploadRes.ok) { try { const ej = await uploadRes.json(); uploadErr = ej.message || ej.error || ('HTTP ' + uploadRes.status); } catch (e) { uploadErr = 'HTTP ' + uploadRes.status; } }
     const foto_url = uploadRes.ok
       ? `${SUPABASE_URL}/storage/v1/object/public/foto-wajah/${fileName}`
       : null;
@@ -5517,11 +5577,11 @@ async function simpanWajahSiswa() {
       nama: siswa.nama,
       kelas: siswa.kelas,
       descriptor,
-      foto_url,
+      ...(foto_url ? { foto_url } : {}),
       updated_at: new Date().toISOString()
     }, 'nis');
 
-    resultEl.innerHTML = `<span class="text-green-600 font-semibold">✅ Data wajah ${sanitizeHTML(siswa.nama)} berhasil disimpan! (${descriptor.length} foto terdaftar)</span>`;
+    resultEl.innerHTML = `<span class="text-green-600 font-semibold">✅ Data wajah ${sanitizeHTML(siswa.nama)} berhasil disimpan! (${descriptor.length} foto terdaftar)</span>` + (uploadErr ? `<br><span class="text-amber-600 text-xs">⚠️ Data wajah tersimpan, tetapi file foto gagal diunggah ke penyimpanan: ${sanitizeHTML(uploadErr)}. Cek bucket "foto-wajah" di Supabase (jalankan ulang supabase-setup.sql).</span>` : '');
     document.getElementById('wajahStatusFoto').innerHTML = '<span class="text-green-600">✅ Wajah sudah terdaftar</span>';
     currentFotoBlob = null;
     document.getElementById('previewFotoWajah').classList.add('hidden');
@@ -5531,6 +5591,7 @@ async function simpanWajahSiswa() {
     resultEl.innerHTML = `<span class="text-red-600">❌ Gagal: ${sanitizeHTML(err.message)}</span>`;
   }
   setButtonLoading('btnSimpanWajah', false);
+  document.getElementById('btnSimpanWajah').disabled = !(document.getElementById('wajahNis').value && currentFotoBlob);
 }
 
 async function loadWajahList() {
@@ -5538,8 +5599,8 @@ async function loadWajahList() {
   tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-gray-500"><i class="fas fa-spinner animate-spin mr-2"></i>Memuat...</td></tr>';
   try {
     const semua = await sbSelect(T.siswa, '?order=kelas.asc,nama.asc');
-    const wajah = await sbSelect('wajah_siswa', '?select=nis,foto_url');
-    const wajahSet = new Set((wajah||[]).filter(w => w.foto_url).map(w => w.nis));
+    const wajah = await sbSelect('wajah_siswa', '?select=nis&descriptor=not.is.null');
+    const wajahSet = new Set((wajah||[]).map(w => w.nis));
     if (!semua || !semua.length) {
       tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-gray-500">Tidak ada data</td></tr>';
       return;

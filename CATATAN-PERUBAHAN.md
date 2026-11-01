@@ -20,3 +20,14 @@
 - Data disimpan di tabel `absensi` dengan `bulan` = `YYYY-MM@m_<nama-mapel>`, terpisah dari shalat.
 - Jalankan `supabase-mapel.sql` di Supabase (sudah termasuk di `supabase-setup.sql` versi baru).
 - Perbaikan: kartu "Berhasil" absen wajah siswa sempat error di v2 awal.
+
+## Perbaikan pendaftaran foto wajah
+- Foto dari kamera HP otomatis dikecilkan (maks. 1280 px) sehingga tidak lagi ditolak karena lebih dari 2 MB.
+- Tombol baru "Ambil Foto dengan Kamera HP" memakai aplikasi kamera bawaan HP (tidak perlu izin kamera browser).
+- Pesan error kamera lebih jelas (izin ditolak, bukan HTTPS, kamera dipakai aplikasi lain).
+- Kalau unggah foto ke Supabase Storage gagal, muncul peringatan beserta penyebabnya; data wajah tetap tersimpan dan siswa tetap tampil "Terdaftar".
+
+## config.js (pengaturan Supabase)
+- URL dan kunci anon Supabase sekarang dibaca dari `config.js`. Untuk pembaruan berikutnya, cukup ganti file lain tanpa menimpa `config.js` Anda.
+- Layar login admin menampilkan diagnosa koneksi ketika login gagal.
+- Tombol "Simpan Data Wajah" memberi petunjuk bila siswa belum dipilih, dan aktif otomatis setelah siswa dipilih.
