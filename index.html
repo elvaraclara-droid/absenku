@@ -5,8 +5,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SEMPAJANG - Sistem Presensi Shalat Berjamaah SMAN 10 Pinrang</title>
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <script defer src="lib/face-api.min.js"></script>
@@ -18,6 +16,9 @@
   <meta name="apple-mobile-web-app-title" content="SEMPAJANG">
   <meta name="theme-color" content="#2563eb">
   <link rel="apple-touch-icon" href="https://sman10pinrang.sch.id/wp-content/uploads/2021/02/cropped-cropped-pake-logo-ini-sman-10-png.png">
+  <!-- PDF (disimpan lokal) -->
+  <script defer src="lib/jspdf.umd.min.js"></script>
+  <script defer src="lib/jspdf.plugin.autotable.min.js"></script>
   <!-- SheetJS untuk export Excel -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
@@ -179,8 +180,8 @@
   <button id="btnJenisShalat" onclick="setJenisAbsen('shalat')" class="flex-1 py-2 px-3 border-2 border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold rounded-xl text-sm"><i class="fas fa-mosque mr-1"></i>Shalat</button>
   <button id="btnJenisMapel" onclick="setJenisAbsen('mapel')" class="flex-1 py-2 px-3 border-2 border-gray-200 bg-white text-gray-600 font-semibold rounded-xl text-sm"><i class="fas fa-book mr-1"></i>Mapel</button>
 </div>
-<!-- Pilihan Mode Absen -->
-<div class="flex gap-2 mb-4">
+<!-- Pilihan Mode Absen (QR dihapus: absen hanya lewat wajah) -->
+<div class="hidden">
   <button onclick="setAbsenMode('nis')" id="btnModeNis"
     class="flex-1 py-2 px-3 border-2 border-blue-500 bg-blue-50 text-blue-700 font-semibold rounded-xl text-sm transition-all">
     <i class="fas fa-qrcode mr-1"></i>QR Code
@@ -276,7 +277,7 @@
 
   <div id="resultWajah" class="hidden mt-4 p-5 rounded-xl text-center"></div>
 </div>
-  <div id="inputNisArea">
+  <div id="inputNisArea" class="hidden">
     <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
       <h3 class="font-semibold text-blue-800 mb-2"><i class="fas fa-info-circle mr-2"></i>Cara Absen Shalat Berjamaah:</h3>
       <ol class="text-sm text-blue-700 space-y-1 list-decimal list-inside">
@@ -338,10 +339,7 @@
         </div>
       </div>
     </div>
-   <div class="grid grid-cols-3 gap-2 mt-6">
-      <button class="py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all flex flex-col items-center gap-1" id="btnLoginGuruQR" onclick="loginPiket('qr')">
-        <i class="fas fa-qrcode text-xl"></i><span class="text-xs">Buat QR</span>
-      </button>
+   <div class="grid grid-cols-2 gap-2 mt-6">
       <button class="py-3 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl transition-all flex flex-col items-center gap-1" id="btnLoginGuruManual" onclick="loginPiket('manual')">
         <i class="fas fa-edit text-xl"></i><span class="text-xs">Manual</span>
       </button>
@@ -546,7 +544,7 @@
         <button onclick="mpRekap()" class="flex-1 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-semibold"><i class="fas fa-table mr-1"></i>Rekap Bulan</button>
       </div>
       <div id="mpRekapArea" class="hidden bg-white border border-gray-200 rounded-xl p-3 mb-4">
-        <div class="flex items-center justify-between mb-2"><p class="font-semibold text-sm text-gray-800" id="mpRekapJudul"></p><button onclick="mpExport()" class="px-3 py-1 bg-green-600 text-white rounded-lg text-xs"><i class="fas fa-file-excel mr-1"></i>Excel</button></div>
+        <div class="flex items-center justify-between mb-2"><p class="font-semibold text-sm text-gray-800" id="mpRekapJudul"></p><div class="flex gap-1"><button onclick="mpExport()" class="px-3 py-1 bg-green-600 text-white rounded-lg text-xs"><i class="fas fa-file-excel mr-1"></i>Excel</button><button onclick="mpPDF()" class="px-3 py-1 bg-red-600 text-white rounded-lg text-xs"><i class="fas fa-file-pdf mr-1"></i>PDF</button></div></div>
         <table class="w-full text-left"><thead><tr class="text-xs text-gray-500 border-b"><th class="p-2">#</th><th class="p-2">Nama</th><th class="p-2 text-center">H</th><th class="p-2 text-center">S</th><th class="p-2 text-center">I</th><th class="p-2 text-center">A</th></tr></thead><tbody id="mpRekapBody"></tbody></table>
       </div>
     </div>
@@ -690,6 +688,9 @@
         <input type="month" id="bulanLaporan" class="flex-1 px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:outline-none transition-colors">
         <button class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition-all" onclick="downloadLaporanBulanan('wali')">
           <i class="fas fa-download mr-1"></i>Excel
+        </button>
+        <button class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-all" onclick="downloadLaporanBulanan('wali','pdf')">
+          <i class="fas fa-file-pdf mr-1"></i>PDF
         </button>
       </div>
       <p class="text-xs text-gray-500 mt-2">Format: NIS | Nama | Kelas | tgl per kolom</p>
@@ -944,12 +945,15 @@
         <p id="editStatusResult" class="text-sm text-center mt-2 min-h-[20px]"></p>
       </div>
 
-      <div class="grid grid-cols-2 gap-3 mb-4">
+      <div class="grid grid-cols-3 gap-2 mb-4">
         <button class="py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg text-sm" onclick="downloadRekapCSV()">
           <i class="fas fa-file-csv mr-1"></i>CSV Harian
         </button>
         <button class="py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm" onclick="downloadAdminExcelBulanan()">
           <i class="fas fa-file-excel mr-1"></i>Excel Bulanan
+        </button>
+        <button class="py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg text-sm" onclick="downloadAdminExcelBulanan('pdf')">
+          <i class="fas fa-file-pdf mr-1"></i>PDF Bulanan
         </button>
       </div>
       <div class="bg-red-50 rounded-xl p-4 border border-red-200">
@@ -1402,41 +1406,7 @@
   </button>
   <p id="resultKonfigLokasi" class="text-xs text-center mt-2 min-h-[16px]"></p>
 </div> 
-  <!-- Toggle Fitur QR Code -->
-<div class="bg-white rounded-xl p-4 border border-gray-200 mb-4">
-  <div class="flex items-center justify-between">
-    <div>
-      <h4 class="font-semibold text-gray-800">
-        <i class="fas fa-qrcode text-blue-500 mr-2"></i>Fitur Absen QR Code
-      </h4>
-      <p class="text-xs text-gray-500 mt-1">Nonaktifkan jika menggunakan mode scan wajah</p>
-    </div>
-    <div class="toggle-wrap" onclick="toggleFiturQR()" id="wrapToggleQR">
-      <div class="toggle-track on" id="toggleQRTrack">
-        <div class="toggle-thumb"></div>
-      </div>
-    </div>
-  </div>
-  <p id="statusFiturQR" class="text-xs mt-3 text-center text-gray-500">Memuat status...</p>
-</div>
 
-<!-- Toggle Absen Wajah Siswa -->
-<div class="bg-white rounded-xl p-4 border border-gray-200 mb-4">
-  <div class="flex items-center justify-between">
-    <div>
-      <h4 class="font-semibold text-gray-800">
-        <i class="fas fa-toggle-on text-blue-500 mr-2"></i>Fitur Absen Wajah Siswa
-      </h4>
-      <p class="text-xs text-gray-500 mt-1">Aktifkan agar tombol absen wajah muncul di halaman siswa</p>
-    </div>
-    <div class="toggle-wrap" onclick="toggleFiturWajahSiswa()" id="wrapToggleWajahSiswa">
-      <div class="toggle-track" id="toggleWajahSiswaTrack">
-        <div class="toggle-thumb"></div>
-      </div>
-    </div>
-  </div>
-  <p id="statusFiturWajah" class="text-xs mt-3 text-center text-gray-500">Memuat status...</p>
-</div>
   <div class="bg-gray-50 rounded-xl p-4 border border-gray-200 mb-4">
     <h4 class="font-semibold text-gray-800 mb-3">
       <i class="fas fa-camera text-blue-500 mr-2"></i>Daftarkan Wajah Siswa
@@ -1500,6 +1470,7 @@
         class="w-32 h-32 object-cover rounded-full mx-auto border-4 border-blue-300 shadow">
       <p class="text-xs text-gray-500 mt-2">Preview foto</p>
     </div>
+    <p id="statusDeteksiFoto" class="text-sm text-center mb-3 min-h-[20px]"></p>
     <label class="flex items-start gap-2 text-xs text-gray-600 mb-3">
       <input type="checkbox" id="chkTambahFoto" checked class="mt-0.5">
       <span>Tambahkan ke foto yang sudah terdaftar (maks. 5). Disarankan foto dengan cahaya/sudut berbeda. Hilangkan centang untuk mengganti semua foto.</span>
@@ -2505,7 +2476,7 @@ function logoutWali() {
 // ============================================================
 // DOWNLOAD LAPORAN BULANAN (Excel pivot)
 // ============================================================
-async function downloadLaporanBulanan(role) {
+async function downloadLaporanBulanan(role, fmt) {
   const bulan = document.getElementById('bulanLaporan').value;
   if (!bulan) { alert('Pilih bulan terlebih dahulu!'); return; }
   const kelas = AppState.activeClass;
@@ -2517,16 +2488,16 @@ async function downloadLaporanBulanan(role) {
       siswa = await sbSelect(T.siswa, '?order=kelas.asc,nama.asc');
       const absensi = await sbSelect(T.absensi, `?bulan=eq.${bulan}&select=*`);
       (absensi || []).forEach(a => { absenMap[a.nis] = a; });
-exportExcelPivot(siswa || [], absenMap, bulan, 'Semua_Kelas');
+exportExcelPivot(siswa || [], absenMap, bulan, 'Semua_Kelas', fmt);
     } else {
       const result = await getDataBulanan(kelas, bulan);
       siswa = result.siswa;
       absenMap = result.absenMap;
-      exportExcelPivot(siswa, absenMap, bulan, kelas);
+      exportExcelPivot(siswa, absenMap, bulan, kelas, fmt);
     }
   } catch (err) { alert('Gagal: ' + err.message); }
 }
-async function downloadAdminExcelBulanan() {
+async function downloadAdminExcelBulanan(fmt) {
   const bulan = document.getElementById('admRekapDate').value.slice(0,7);
   if (!bulan) { alert('Pilih bulan di filter rekap terlebih dahulu!'); return; }
   const kelasFilter = document.getElementById('filterKelasAdmin').value;
@@ -2536,14 +2507,15 @@ async function downloadAdminExcelBulanan() {
     const absensi = await sbSelect(T.absensi, `?bulan=eq.${bulan}${kelasFilter ? '&kelas=eq.' + encodeURIComponent(kelasFilter) : ''}`);
     const absenMap = {};
     (absensi || []).forEach(a => { absenMap[a.nis] = a; });
-    exportExcelPivot(semua, absenMap, bulan, kelasFilter || 'Semua_Kelas');
+    exportExcelPivot(semua, absenMap, bulan, kelasFilter || 'Semua_Kelas', fmt);
   } catch (err) { alert('Gagal: ' + err.message); }
 }
 
 const STATUS_FULL_EXPORT = { H:'Hadir', S:'Sakit', I:'Izin', A:'Alpa', '':'', null:'' };
 const BULAN_NAMA = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
 
-function exportExcelPivot(siswa, absenMap, bulan, namaFileKelas) {
+function exportExcelPivot(siswa, absenMap, bulan, namaFileKelas, fmt) {
+  if (fmt === 'pdf') return exportPDFPivot(siswa, absenMap, bulan, namaFileKelas);
   if (!siswa || !siswa.length) { alert('Tidak ada data siswa!'); return; }
   const [tahun, bln] = bulan.split('-').map(Number);
   const jumlahHari = new Date(tahun, bln, 0).getDate();
@@ -4240,6 +4212,7 @@ let fiturWajahSiswaAktif = false;
 let fiturQRAktif = true;
 
 async function loadFiturQRStatus() {
+  fiturQRAktif = false; applyFiturQR(false); return;   // QR dihapus: absen hanya lewat wajah
   try {
     const data = await sbSelect('config', '?key=eq.fitur_qr_code&limit=1');
     const aktif = !data || !data.length || data[0].value !== 'false';
@@ -4297,6 +4270,7 @@ async function toggleFiturQR() {
 // TOGGLE FITUR ABSEN WAJAH SISWA (oleh Admin)
 // ============================================================
 async function loadFiturWajahStatus() {
+  fiturWajahSiswaAktif = true; applyFiturWajahSiswa(true); return;   // absen wajah selalu aktif
   try {
     const data = await sbSelect('config', '?key=eq.fitur_absen_wajah_siswa&limit=1');
     const aktif = data && data.length && data[0].value === 'true';
@@ -4389,6 +4363,7 @@ async function loadServerConfig() {
 }
   document.addEventListener('DOMContentLoaded', () => {
   switchRole('siswa');
+  setAbsenMode('wajah');
   loadFiturWajahStatus(); // ← tambahkan ini
   loadFiturQRStatus();
   document.getElementById('waliRekapDate').value = todayStr();
@@ -4703,6 +4678,8 @@ let faceStream = null;
 let faceDetectionInterval = null;
 let faceModelsLoaded = false;
 let currentFotoBlob = null;
+let currentFotoDet = null;   // hasil deteksi wajah pada foto yang sedang disiapkan
+let _cekSeq = 0;
 let adminKameraStream = null;
 let adminFacingMode = 'user';
 const FACE_MODEL_URL = 'models';            // model disimpan bersama aplikasi (offline, versi terkunci)
@@ -4845,7 +4822,7 @@ function setJenisAbsen(j) {
   [[bs, j === 'shalat'], [bm, j === 'mapel']].forEach(([b, a]) => { b.classList.remove(...on, ...off); b.classList.add(...(a ? on : off)); });
   const nisBtn = document.getElementById('btnModeNis');
   if (j === 'mapel') { nisBtn.classList.add('hidden'); setAbsenMode('wajah'); }
-  else { nisBtn.classList.remove('hidden'); setAbsenMode('nis'); }
+  else { setAbsenMode('wajah'); }
   updateWaktuBar('siswa');
 }
 // Tentukan "ke mana" absen siswa dicatat: shalat aktif, atau sesi mapel yang dibuka untuk kelas siswa
@@ -4877,7 +4854,10 @@ async function loginMapel() {
     MP.kelasList = [...new Set((ks || []).map(x => x.kelas).filter(Boolean))].sort();
     document.getElementById('mpKelasPilih').innerHTML = MP.kelasList.map(k => `<option value="${enc(k)}">${sanitizeHTML(k)}</option>`).join('');
     await mpLoadAsg();
-  } catch (e) { msg.textContent = e.message; }
+  } catch (e) {
+    msg.textContent = e.message;
+    if (/salah/.test(e.message)) diagKoneksi().then(t => { msg.textContent = e.message + '  [' + t + ']'; });
+  }
   setButtonLoading('btnLoginMapel', false);
 }
 function logoutMapel() {
@@ -5047,6 +5027,72 @@ function mpExport() {
   XLSX.writeFile(wb, `Absen_${MP.cur.mapel}_${MP.cur.kelas}_${MP.rekapBulan}.xlsx`.replace(/\s+/g, '_'));
 }
 
+// ============================================================
+// UNDUH PDF (rekap bulanan per kelas, kertas A4 landscape)
+// ============================================================
+const BULAN_PANJANG = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+function exportPDFPivot(siswa, absenMap, bulan, namaFile, judulJenis) {
+  if (!window.jspdf || !window.jspdf.jsPDF) { alert('Pustaka PDF belum termuat. Muat ulang halaman lalu coba lagi.'); return; }
+  if (!siswa || !siswa.length) { alert('Tidak ada data siswa!'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  if (typeof doc.autoTable !== 'function') { alert('Pustaka tabel PDF belum termuat. Muat ulang halaman.'); return; }
+  const [tahun, bln] = bulan.split('-').map(Number);
+  const hari = new Date(tahun, bln, 0).getDate();
+  const jenis = judulJenis || ('Shalat ' + waktuLabel(CUR_WAKTU) + ' Berjamaah');
+  const byKelas = {};
+  siswa.forEach(x => { (byKelas[x.kelas] = byKelas[x.kelas] || []).push(x); });
+  const dow = d => new Date(tahun, bln - 1, d).getDay();
+  Object.keys(byKelas).sort().forEach((kelas, idx) => {
+    if (idx > 0) doc.addPage();
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+    doc.text('REKAP KEHADIRAN ' + jenis.toUpperCase(), 148.5, 12, { align: 'center' });
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+    doc.text('SMA Negeri 10 Pinrang', 148.5, 17, { align: 'center' });
+    doc.text('Kelas: ' + kelas + '      Bulan: ' + BULAN_PANJANG[bln - 1] + ' ' + tahun, 14, 24);
+    const head = [['No', 'Nama', ...Array.from({ length: hari }, (_, i) => String(i + 1)), 'H', 'S', 'I', 'A']];
+    const body = byKelas[kelas].map((x, i) => {
+      const rec = absenMap[x.nis] || {}; const c = { H: 0, S: 0, I: 0, A: 0 }; const cells = [];
+      for (let d = 1; d <= hari; d++) { const v = rec['tgl_' + String(d).padStart(2, '0')] || ''; cells.push(v); if (c[v] !== undefined) c[v]++; }
+      return [String(i + 1), x.nama, ...cells, c.H, c.S, c.I, c.A];
+    });
+    doc.autoTable({
+      head, body, startY: 27, theme: 'grid', margin: { left: 8, right: 8, bottom: 14 },
+      styles: { fontSize: 6.5, cellPadding: 0.9, halign: 'center', valign: 'middle', lineWidth: 0.1, lineColor: [160, 160, 160] },
+      headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: 'bold' },
+      columnStyles: { 0: { cellWidth: 7 }, 1: { halign: 'left', cellWidth: 50 } },
+      didParseCell: h => {
+        const ci = h.column.index;
+        if (ci >= 2 && ci < 2 + hari && (dow(ci - 1) === 0 || dow(ci - 1) === 6)) h.cell.styles.fillColor = h.section === 'head' ? [30, 64, 175] : [229, 231, 235];
+        if (h.section === 'body' && ci >= 2 && ci < 2 + hari) {
+          const v = h.cell.raw;
+          if (v === 'A') { h.cell.styles.textColor = [185, 28, 28]; h.cell.styles.fontStyle = 'bold'; }
+          else if (v === 'H') h.cell.styles.textColor = [29, 78, 216];
+          else if (v === 'S' || v === 'I') h.cell.styles.textColor = [180, 83, 9];
+        }
+      }
+    });
+    doc.setFontSize(7); doc.setTextColor(90);
+    doc.text('Keterangan: H = Hadir, S = Sakit, I = Izin, A = Alpa. Kolom abu-abu = Sabtu/Minggu. Kolom kosong = belum ada data.', 8, doc.lastAutoTable.finalY + 5);
+    doc.setTextColor(0);
+  });
+  const n = doc.getNumberOfPages(), tgl = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+  for (let i = 1; i <= n; i++) { doc.setPage(i); doc.setFontSize(7); doc.setTextColor(120); doc.text('Dicetak ' + tgl + ' - SEMPAJANG', 8, 205); doc.text('Halaman ' + i + ' / ' + n, 289, 205, { align: 'right' }); }
+  doc.save(('Absensi_' + namaFile + '_' + bulan + '.pdf').replace(/\s+/g, '_'));
+}
+async function mpPDF() {
+  if (!MP.cur) return;
+  const tgl = document.getElementById('mpTanggal').value || todayStr(), bulan = toBulan(tgl), key = mpKey(MP.cur.mapel);
+  try {
+    const [siswa, abs] = await Promise.all([
+      sbSelect(T.siswa, `?kelas=eq.${enc(MP.cur.kelas)}&order=nama.asc`),
+      _sbSelect(T.absensi, `?kelas=eq.${enc(MP.cur.kelas)}&bulan=eq.${enc(bulanKey(bulan, key))}`)
+    ]);
+    const m = {}; (abs || []).forEach(a => { m[a.nis] = a; });
+    exportPDFPivot(siswa || [], m, bulan, MP.cur.mapel + '_' + MP.cur.kelas, 'Mapel ' + MP.cur.mapel);
+  } catch (e) { alert('Gagal membuat PDF: ' + e.message); }
+}
+
 // Load model face-api.js
 async function loadFaceModels() {
   if (faceModelsLoaded) return true;
@@ -5068,6 +5114,7 @@ async function loadFaceModels() {
 // MODE ABSEN
 // ============================================================
 function setAbsenMode(mode) {
+  mode = 'wajah';   // QR dihapus
   if (mode === 'wajah') warmFaceCache();
   const nisArea = document.getElementById('inputNisArea');
   const wajahArea = document.getElementById('absenWajahArea');
@@ -5344,10 +5391,7 @@ function showFaceResult(success, data, akurasi=0) {
         onclick="resetAbsenWajah()">
         <i class="fas fa-redo mr-2"></i>Coba Lagi
       </button>
-      <button class="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg"
-        onclick="setAbsenMode('nis')">
-        <i class="fas fa-keyboard mr-2"></i>Input NIS
-      </button>`;
+      `;
   }
 }
 
@@ -5398,11 +5442,49 @@ function searchStudentWajah(keyword) {
 }
 
 // Tombol simpan aktif hanya jika siswa SUDAH dipilih dan foto SUDAH ada; beri petunjuk jika belum
+// Periksa foto SEBELUM disimpan: harus ada tepat satu wajah, cukup besar. Tombol Simpan aktif hanya jika lolos.
+async function cekFotoWajah() {
+  const el = document.getElementById('statusDeteksiFoto');
+  const seq = ++_cekSeq;
+  currentFotoDet = null;
+  if (!currentFotoBlob) { el.innerHTML = ''; updateTombolSimpanWajah(); return; }
+  el.innerHTML = '<span class="text-blue-600"><i class="fas fa-spinner animate-spin mr-1"></i>Memeriksa wajah pada foto...</span>';
+  updateTombolSimpanWajah();
+  try {
+    if (!(await loadFaceModels())) throw new Error('Gagal memuat model AI. Periksa koneksi lalu ambil foto lagi.');
+    const img = await faceapi.bufferToImage(currentFotoBlob);
+    const all = await faceapi.detectAllFaces(img, detectorOpts(416)).withFaceLandmarks(true).withFaceDescriptors();
+    if (seq !== _cekSeq) return;
+    if (!all.length) throw new Error('Wajah tidak terdeteksi. Ulangi foto: hadap lurus ke kamera, cahaya cukup, wajah memenuhi sebagian besar gambar.');
+    if (all.length > 1) throw new Error('Terdeteksi ' + all.length + ' wajah. Gunakan foto dengan satu wajah saja.');
+    const d = all[0], box = d.detection.box;
+    const ratio = box.width / (img.naturalWidth || img.width);
+    if (ratio < 0.15) throw new Error('Wajah terlalu kecil di foto. Dekatkan kamera atau potong foto.');
+    const p = d.landmarks.positions, yaw = (p[30].x - p[0].x) / Math.max(1, (p[16].x - p[0].x));
+    const tips = [];
+    if (ratio < 0.25) tips.push('wajah agak kecil, sebaiknya lebih dekat');
+    if (Math.abs(yaw - 0.5) > 0.12) tips.push('wajah agak menyamping, sebaiknya menghadap lurus');
+    // tandai wajah pada preview
+    try {
+      const c = document.createElement('canvas'); c.width = img.naturalWidth || img.width; c.height = img.naturalHeight || img.height;
+      const g = c.getContext('2d'); g.drawImage(img, 0, 0);
+      g.lineWidth = Math.max(3, c.width / 120); g.strokeStyle = '#22c55e'; g.strokeRect(box.x, box.y, box.width, box.height);
+      document.getElementById('previewFotoImg').src = c.toDataURL('image/jpeg', 0.7);
+    } catch (e) {}
+    currentFotoDet = d;
+    el.innerHTML = '<span class="text-green-600 font-semibold"><i class="fas fa-check-circle mr-1"></i>Wajah terdeteksi (1 wajah)</span>' + (tips.length ? '<br><span class="text-amber-600 text-xs">Saran: ' + tips.join('; ') + '.</span>' : '');
+  } catch (e) {
+    if (seq !== _cekSeq) return;
+    el.innerHTML = '<span class="text-red-600"><i class="fas fa-times-circle mr-1"></i>' + sanitizeHTML(e.message) + '</span>';
+  }
+  updateTombolSimpanWajah();
+}
+
 function updateTombolSimpanWajah() {
   const nis = document.getElementById('wajahNis').value;
   const b = document.getElementById('btnSimpanWajah');
   const m = document.getElementById('resultSimpanWajah');
-  b.disabled = !(nis && currentFotoBlob);
+  b.disabled = !(nis && currentFotoBlob && currentFotoDet);
   if (!nis && currentFotoBlob) m.innerHTML = '<span class="text-amber-600 font-semibold">⚠️ Foto sudah siap. Pilih dulu siswanya lewat kolom pencarian di bagian atas.</span>';
   else if (nis && !currentFotoBlob) m.innerHTML = '<span class="text-amber-600">Ambil foto atau upload foto dulu.</span>';
   else if (nis && currentFotoBlob) m.innerHTML = '';
@@ -5472,7 +5554,7 @@ function ambilFotoAdmin() {
     currentFotoBlob = blob;
     tampilkanPreviewFoto(URL.createObjectURL(blob));
     stopAdminKamera();
-    updateTombolSimpanWajah();
+    cekFotoWajah();
   }, 'image/jpeg', 0.9);
 }
 
@@ -5498,7 +5580,7 @@ async function handleUploadFoto(input) {
   if (file.size > 25 * 1024 * 1024) { alert('Ukuran file terlalu besar (maks. 25MB).'); return; }
   try { currentFotoBlob = await kompresFoto(file); } catch (e) { currentFotoBlob = file; }
   tampilkanPreviewFoto(URL.createObjectURL(currentFotoBlob));
-  updateTombolSimpanWajah();
+  cekFotoWajah();
   try { input.value = ''; } catch (e) {}
 }
 
@@ -5526,7 +5608,7 @@ async function simpanWajahSiswa() {
     resultEl.innerHTML = '<span class="text-blue-600"><i class="fas fa-spinner animate-spin mr-1"></i>Mendeteksi wajah...</span>';
 
     // Deteksi wajah & ambil descriptor
-    const detection = await faceapi
+    const detection = currentFotoDet || await faceapi
       .detectSingleFace(img, detectorOpts(416))
       .withFaceLandmarks(true)
       .withFaceDescriptor();
@@ -5583,7 +5665,8 @@ async function simpanWajahSiswa() {
 
     resultEl.innerHTML = `<span class="text-green-600 font-semibold">✅ Data wajah ${sanitizeHTML(siswa.nama)} berhasil disimpan! (${descriptor.length} foto terdaftar)</span>` + (uploadErr ? `<br><span class="text-amber-600 text-xs">⚠️ Data wajah tersimpan, tetapi file foto gagal diunggah ke penyimpanan: ${sanitizeHTML(uploadErr)}. Cek bucket "foto-wajah" di Supabase (jalankan ulang supabase-setup.sql).</span>` : '');
     document.getElementById('wajahStatusFoto').innerHTML = '<span class="text-green-600">✅ Wajah sudah terdaftar</span>';
-    currentFotoBlob = null;
+    currentFotoBlob = null; currentFotoDet = null; ++_cekSeq;
+    { const sd = document.getElementById('statusDeteksiFoto'); if (sd) sd.innerHTML = ''; }
     document.getElementById('previewFotoWajah').classList.add('hidden');
     loadWajahList();
 

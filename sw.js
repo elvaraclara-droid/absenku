@@ -16,10 +16,11 @@ const STATIC_ASSETS = [
   BASE,
   BASE + 'index.html',
   BASE + 'lib/face-api.min.js',
+  BASE + 'lib/jspdf.umd.min.js',
+  BASE + 'lib/jspdf.plugin.autotable.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
   'https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4',
   'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
 ];
 
 // Install: cache static assets (model AI besar di-cache saat fitur wajah dipakai)

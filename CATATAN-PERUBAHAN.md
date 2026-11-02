@@ -31,3 +31,21 @@
 - URL dan kunci anon Supabase sekarang dibaca dari `config.js`. Untuk pembaruan berikutnya, cukup ganti file lain tanpa menimpa `config.js` Anda.
 - Layar login admin menampilkan diagnosa koneksi ketika login gagal.
 - Tombol "Simpan Data Wajah" memberi petunjuk bila siswa belum dipilih, dan aktif otomatis setelah siswa dipilih.
+
+## Unduh PDF
+- Rekap bulanan per kelas, A4 landscape (satu halaman per kelas), kolom tanggal 1..31, kolom Sabtu/Minggu abu-abu, total H/S/I/A, judul mengikuti waktu shalat/mapel.
+- Tombol: Wali (Unduh Laporan Bulanan -> PDF), Admin (tab Rekap -> PDF Bulanan), Guru Mapel (Rekap Bulan -> PDF).
+- Pustaka PDF (jsPDF + autotable) disimpan lokal di folder `lib/`.
+
+## Deteksi wajah sebelum simpan
+- Setelah foto diambil/diunggah, aplikasi langsung memeriksa wajah: harus tepat 1 wajah dan cukup besar. Wajah ditandai kotak hijau di preview.
+- Tombol Simpan hanya aktif jika lolos pemeriksaan; hasil deteksi dipakai ulang saat menyimpan (tidak diproses dua kali).
+- Saran (tidak memblokir): wajah agak kecil atau menyamping.
+
+## Penghapusan scan QR/barcode
+- Siswa hanya absen dengan wajah (langkah lokasi → kamera). Tombol mode NIS/QR disembunyikan.
+- Piket: tombol "Buat QR" dihapus; tersisa "Manual" dan "Scan Wajah".
+- Admin: kartu pengaturan QR dan fitur wajah dihapus (wajah selalu aktif).
+- Library html5-qrcode dan qrcode.js dihapus dari halaman dan cache service worker (cache sempajang-v2).
+- Sisa kode QR yang tidak terpakai tetap ada di file tetapi tidak pernah dipanggil.
+- Tetap gunakan config.js milik Anda (URL + anon key Supabase).
